@@ -1,4 +1,4 @@
-.pt
+*.pt
 runs/
 datasets/
-.mp4
+*.mp4
