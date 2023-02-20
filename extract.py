@@ -32,7 +32,35 @@ def predict_on_image(model, img, conf):
 
         return boxes, masks, cls, probs
 
+def overlay(image, mask, color, alpha, resize=None):
+    """Combines image and its segmentation mask into a single image.
+    https://www.kaggle.com/code/purplejester/showing-samples-with-segmentation-mask-overlay
 
+    Params:
+        image: Training image. np.ndarray,
+        mask: Segmentation mask. np.ndarray,
+        color: Color for segmentation mask rendering.  tuple[int, int, int] = (255, 0, 0)
+        alpha: Segmentation mask's transparency. float = 0.5,
+        resize: If provided, both image and its mask are resized before blending them together.
+        tuple[int, int] = (1024, 1024))
+
+    Returns:
+        image_combined: The combined image. np.ndarray
+
+    """
+    color = color[::-1]
+    colored_mask = np.expand_dims(mask, 0).repeat(3, axis=0)
+    colored_mask = np.moveaxis(colored_mask, 0, -1)
+    masked = np.ma.MaskedArray(image, mask=colored_mask, fill_value=color)
+    image_overlay = masked.filled()
+
+    if resize is not None:
+        image = cv2.resize(image.transpose(1, 2, 0), resize)
+        image_overlay = cv2.resize(image_overlay.transpose(1, 2, 0), resize)
+
+    image_combined = cv2.addWeighted(image, 1 - alpha, image_overlay, alpha, 0)
+
+    return image_combined
 
 '''
 cuts out the part of the image that is detected by the model, and makes it fill the frame
@@ -114,6 +142,32 @@ def cut_out_detection(image, mask):
  
     return result_image
 
+# stacks 3 video frame together
+def merge_videos (original, predicted, extracted):
+
+    # resize the video frames
+    h, w, _ = original.shape
+    new_h = int(h/3)
+    new_w = int(w/3)
+    new_size = (new_w, new_h)
+
+    resized_original = cv2.resize(original, (new_size))
+    resized_predicted = cv2.resize(predicted, (new_size))
+    resized_extracted = cv2.resize(extracted, (new_size))
+
+    # create the blank stack
+    stack = np.zeros((h+1,new_w+1,3), np.uint8)
+
+    stack[0:new_h, 0:new_w] = resized_original
+
+    stack[new_h:new_h*2, 0:new_w] = resized_predicted
+
+    stack[new_h*2:new_h*3, 0:new_w] = resized_extracted
+
+    return stack
+
+
+
 '''
 Entry point of the script
 
@@ -136,7 +190,7 @@ if __name__ == "__main__":
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH) + 0.5)
     height = int(vid_capture.get(cv2.CAP_PROP_FRAME_HEIGHT) + 0.5)
     length = int(vid_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    size = (width, height)
+    size = (int(width/3)+1, height)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(output_name, fourcc, 60.0, size)
 
@@ -155,13 +209,21 @@ if __name__ == "__main__":
             if masks is None:
                 pass
             else:
+
+
                 # overlay each mask on the original image independently
+                image_with_masks = np.copy(frame)
+                for mask_i in masks:
+                    image_with_masks = overlay(image_with_masks, mask_i, color=(255,0,0), alpha=0.7)
+                
+                # cut out the detections out of the image
                 for mask_i in masks:
                     scaled_cutout = np.copy(frame)
                     scaled_cutout = cut_out_detection(scaled_cutout, mask_i)
 
                     if not scaled_cutout is None:
-                        out.write(scaled_cutout)
+                        final_frame = merge_videos(frame, image_with_masks, scaled_cutout)
+                        out.write(final_frame)
             print("Processed frames: " + str(count) + "/" + str(length), end="\r")        
         else:
             break
