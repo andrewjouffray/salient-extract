@@ -1,7 +1,7 @@
-*.pt
 runs/
 official_models/
 data/
+*salient_extract_x.pt
 datasets/
 outputs/
 *.mp4
