@@ -1,4 +1,7 @@
 *.pt
 runs/
+official_models/
+data/
 datasets/
+outputs/
 *.mp4

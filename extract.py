@@ -1,16 +1,43 @@
+'''
+    Salient Extract, salient feature extraction model
+    Copyright (C) 2023  Andrew Jouffray
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 from ultralytics import YOLO
 from ultralytics.yolo.utils.ops import scale_image
 import cv2
 import numpy as np
 import sys
+import argparse
 
-
-
-
-'''
-runs the model on an image and converts the detection masks to np.arrays 
-'''
 def predict_on_image(model, img, conf):
+    '''
+    runs the model on an image and converts the detection masks to np.arrays 
+
+    params:
+        - model: yolov8 model instance
+        - img: image to predict on
+        - conf: confidence threshold
+
+    outputs:
+        - boxes: list of bounding boxs
+        - masks: list of detection masks
+        - cls: detection classes
+        - probs: confidence scores
+    '''
 
     result = model(img, conf=conf, verbose=False)[0]
     if result.masks == None:
@@ -62,12 +89,21 @@ def overlay(image, mask, color, alpha, resize=None):
 
     return image_combined
 
-'''
-cuts out the part of the image that is detected by the model, and makes it fill the frame
-'''
-def cut_out_detection(image, mask):
 
-    '''the following oprations assume that the mask size is smaller than the original image size'''
+
+def cut_out_detection(image, mask):
+    '''
+    cuts out the part of the image that is detected by the model, and makes it fill the frame.
+
+    params:
+        - image: original image that the detection was run on
+        - mask: binary 2D mask
+
+    output:
+        - Color image on the masked object cut out and scaled to fit the frame
+
+    The following oprations assume that the mask size is smaller than the original image size.
+    '''
 
     # convert the mask to unit8 to make cv2 happy
     mask = mask.astype(np.uint8)
@@ -85,9 +121,12 @@ def cut_out_detection(image, mask):
     # make sure there are large contours before we keep going
     if len(large_contours) == 0:
         return None
+
+    # merge all the contours together
+    join_cnts = np.concatenate(large_contours)
     
     # get the bounding box around the contour
-    rect = cv2.boundingRect(large_contours[0])
+    rect = cv2.boundingRect(join_cnts)
 
     # start colum, start row, width, height of the rectangle
     (x, y, w, h)= rect
@@ -143,8 +182,20 @@ def cut_out_detection(image, mask):
     return result_image
 
 # stacks 3 video frame together
-def merge_videos (original, predicted, extracted):
+def merge_videos (original, predicted, extracted, orientation):
+    """Stacks the original image, the image with detection mask and the cut out image side by side.
 
+    Params:
+        original: original image 
+        predicted: image with the prediction mask overlayed
+        extracted: cut out of the masked area
+        orientation: vertical / horizontal
+
+
+    Returns:
+        merged_images: image of the 3 stacked images side by side
+
+    """
     # resize the video frames
     h, w, _ = original.shape
     new_h = int(h/3)
@@ -153,49 +204,105 @@ def merge_videos (original, predicted, extracted):
 
     resized_original = cv2.resize(original, (new_size))
     resized_predicted = cv2.resize(predicted, (new_size))
-    resized_extracted = cv2.resize(extracted, (new_size))
 
-    # create the blank stack
-    stack = np.zeros((h+1,new_w+1,3), np.uint8)
+    # if None was passed, we assume no detection was made and therefore we create a black frame
+    resized_extracted = extracted
+    if resized_extracted is None:
+        resized_extracted = np.zeros((new_h,new_w,3), np.uint8)
+    else:
+        resized_extracted = cv2.resize(extracted, (new_size))
 
-    stack[0:new_h, 0:new_w] = resized_original
+    if orientation == "horizontal":
 
-    stack[new_h:new_h*2, 0:new_w] = resized_predicted
+        # create the blank stack
+        stack = np.zeros((new_h+1,w+1,3), np.uint8)
 
-    stack[new_h*2:new_h*3, 0:new_w] = resized_extracted
+        stack[0:new_h, 0:new_w] = resized_original
+
+        stack[0:new_h, new_w:new_w*2] = resized_predicted
+
+        stack[0:new_h, new_w*2:new_w*3] = resized_extracted
+
+    else:
+
+        # create the blank stack
+        stack = np.zeros((h+1,new_w+1,3), np.uint8)
+
+        stack[0:new_h, 0:new_w] = resized_original
+
+        stack[new_h:new_h*2, 0:new_w] = resized_predicted
+
+        stack[new_h*2:new_h*3, 0:new_w] = resized_extracted
 
     return stack
 
 
 
-'''
-Entry point of the script
 
-example:
-python extract.py yolov8x-seg.pt /home/andrew/Videos/quince.mp4 output.mp4
-
-inspired from https://github.com/ultralytics/ultralytics/issues/561
-
-'''
 if __name__ == "__main__":
- 
+    '''
+    Entry point of the script
+
+    example: python extract.py yolov8x-seg.pt <path to video>/yourvid.mp4 output.mp4 yes no
+
+    implementation inspired from https://github.com/ultralytics/ultralytics/issues/561
+
+    '''
+
+    print("Salient Extract  Copyright (C) 2023  Andrew Jouffray\n", 
+    "This program comes with ABSOLUTELY NO WARRANTY.\n",
+    "This is free software, and you are welcome to redistribute it\n",
+    "under certain conditions.")
+    
+    # quick input check
+    if len(sys.argv) < 5:
+        print("Missing arguments: \npython extract.py <model name> <path to video> <output name.mp4> <(merge masks)yes / no> <(stack mode)yes / no>")
+        exit()
+
+    # arguments
     model_name = sys.argv[1]
     input_name = sys.argv[2]
     output_name = sys.argv[3]
+    merge = sys.argv[4]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--merge', '-m', help="Merge masks together (reduce jitter)", type= bool, default= True)
+    parser.add_argument('--stack', '-s', help="Stack all the output frames together", type= bool, default= False)
+
+    # merge the masks
+    if merge.lower() == "yes":
+        merge = True
+    else:
+        merge = False
 
     model = YOLO(model_name)
     model.info(verbose=False)
     vid_capture = cv2.VideoCapture(input_name)
 
+    # setting up the video writer
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH) + 0.5)
     height = int(vid_capture.get(cv2.CAP_PROP_FRAME_HEIGHT) + 0.5)
     length = int(vid_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    size = (int(width/3)+1, height)
+
+    # defines how to stack the videos in debug mode
+    if width < length:
+        orientation = "vertical"
+        size = (int(width/3)+1, height)
+    else:
+        orientation = "horizontal"
+        size = (width, int(height/3)+1)
+
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(output_name, fourcc, 60.0, size)
 
+    # init tracking variables
     count = 0
+    features_extracted = 0
+    frames_with_masks = 0
 
+    last_4_masks = []
+
+    # main video processing loop
     while(vid_capture.isOpened()):
 
         ret, frame = vid_capture.read()
@@ -207,14 +314,35 @@ if __name__ == "__main__":
             boxes, masks, cls, probs = predict_on_image(model, img, conf=0.55)
 
             if masks is None:
-                pass
+                final_frame = merge_videos(frame, frame, None, orientation)
+                out.write(final_frame)
             else:
-
-
+                frames_with_masks += 1
                 # overlay each mask on the original image independently
                 image_with_masks = np.copy(frame)
+                merged_masks = np.zeros((height,width,1), np.uint8)
+
                 for mask_i in masks:
                     image_with_masks = overlay(image_with_masks, mask_i, color=(255,0,0), alpha=0.7)
+
+                    # merge all the masks from that frame 
+                    mask_i = mask_i.astype(np.uint8)
+                    merged_masks = cv2.add(merged_masks, mask_i)
+
+                    # add that merged mask to the list of the last 3
+                    last_4_masks.append(merged_masks)
+
+                    # if there are more than 3, remove the first one
+                    if len(last_4_masks) > 4:
+                        last_4_masks.pop(0)
+
+                # if there are 4 merged masks, add them all up together
+                if len(last_4_masks) == 4 and merge:
+                    last_4_merged_masks = np.zeros((height,width,1), np.uint8)
+                    for mask in last_4_masks:
+                        last_4_merged_masks = cv2.add(last_4_merged_masks, mask)
+                    masks = [last_4_merged_masks]
+                    
                 
                 # cut out the detections out of the image
                 for mask_i in masks:
@@ -222,12 +350,30 @@ if __name__ == "__main__":
                     scaled_cutout = cut_out_detection(scaled_cutout, mask_i)
 
                     if not scaled_cutout is None:
-                        final_frame = merge_videos(frame, image_with_masks, scaled_cutout)
+                        features_extracted += 1
+                        final_frame = merge_videos(frame, image_with_masks, scaled_cutout, orientation)
                         out.write(final_frame)
+                    
+                    # all the masks were too small
+                    else:
+                        final_frame = merge_videos(frame, image_with_masks, None, orientation)
+                        out.write(final_frame)
+
+
             print("Processed frames: " + str(count) + "/" + str(length), end="\r")        
         else:
             break
 
     # release the writer
     out.release()
+    
+    print("\n============== extraction metrics ===============\n")
 
+    # print the stats 
+    detection_precent = (frames_with_masks / length) * 100
+    print("Percenteage of frames with masks: {:>14.2f}%".format(detection_precent))
+
+    print("Number of salient features extracted: {:>11}".format(features_extracted))
+
+    features_pre_frames = features_extracted / frames_with_masks
+    print("Salient feature per frames with masks: {:>10.2f}".format(features_pre_frames))
