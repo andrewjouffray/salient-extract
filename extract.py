@@ -249,31 +249,34 @@ if __name__ == "__main__":
 
     '''
 
-    print("Salient Extract  Copyright (C) 2023  Andrew Jouffray\n", 
+    print("\nSalient Extract  Copyright (C) 2023  Andrew Jouffray\n", 
     "This program comes with ABSOLUTELY NO WARRANTY.\n",
     "This is free software, and you are welcome to redistribute it\n",
-    "under certain conditions.")
+    "under certain conditions.\n")
     
-    # quick input check
-    if len(sys.argv) < 5:
-        print("Missing arguments: \npython extract.py <model name> <path to video> <output name.mp4> <(merge masks)yes / no> <(stack mode)yes / no>")
-        exit()
+    # # quick input check
+    # if len(sys.argv) < 5:
+    #     print("Missing arguments: \npython extract.py --model <model name> --input <path to video> --output <output name.mp4> --smooth <True / False> --stitch <True / False")
+    #     exit()
 
-    # arguments
-    model_name = sys.argv[1]
-    input_name = sys.argv[2]
-    output_name = sys.argv[3]
-    merge = sys.argv[4]
+    # # arguments
+
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--merge', '-m', help="Merge masks together (reduce jitter)", type= bool, default= True)
-    parser.add_argument('--stack', '-s', help="Stack all the output frames together", type= bool, default= False)
+    parser.add_argument('--model', '-m', help="Model to use", type=str, required=True)
+    parser.add_argument('--input', '-i', help="Path to input video", type=str, required=True)
+    parser.add_argument('--output', '-o', help="Path to output video", type=str, required=True)
+    parser.add_argument('--smooth', '-s', help="Merges masks together (reduce jitter and outline precision)", type= bool, default= True)
+    parser.add_argument('--stitch', '-t', help="Stiches input frames, detection frame and extracted frames together", type= bool, default= False)
+    args=parser.parse_args()
 
-    # merge the masks
-    if merge.lower() == "yes":
-        merge = True
-    else:
-        merge = False
+
+    model_name = args.model
+    input_name = args.input
+    output_name = args.output
+
+    merge = args.smooth
+    stitch = args.stitch
 
     model = YOLO(model_name)
     model.info(verbose=False)
@@ -314,8 +317,9 @@ if __name__ == "__main__":
             boxes, masks, cls, probs = predict_on_image(model, img, conf=0.55)
 
             if masks is None:
-                final_frame = merge_videos(frame, frame, None, orientation)
-                out.write(final_frame)
+                if stitch:
+                    final_frame = merge_videos(frame, frame, None, orientation)
+                    out.write(final_frame)
             else:
                 frames_with_masks += 1
                 # overlay each mask on the original image independently
@@ -351,11 +355,14 @@ if __name__ == "__main__":
 
                     if not scaled_cutout is None:
                         features_extracted += 1
-                        final_frame = merge_videos(frame, image_with_masks, scaled_cutout, orientation)
+                        if stitch:
+                            final_frame = merge_videos(frame, image_with_masks, scaled_cutout, orientation)
+                        else:
+                            final_frame = scaled_cutout
                         out.write(final_frame)
                     
-                    # all the masks were too small
-                    else:
+                    # all the masks were too small and we are in stitch mode
+                    elif stitch:
                         final_frame = merge_videos(frame, image_with_masks, None, orientation)
                         out.write(final_frame)
 
