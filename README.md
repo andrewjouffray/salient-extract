@@ -11,7 +11,7 @@ This project is in very early development stages, expect bugs and frequent updat
 ![example](docs/images/field6.gif)
 
 ## Getting started (Linux):
----
+
 
 Check your GPU install / drivers (optional):
 
@@ -46,15 +46,15 @@ Run:
 
 
 ## Support this project:
----
+
 
 **This project is currently self-funded; access the larger Yolo x model, dataset and newest models by supporting this project on Patreon**.
 Your support will also allow me to purchase better hardware and accelerate my work. 
 
-[patreon.com/SalientExtractAi](patreon.com/SalientExtractAi)
+[patreon.com/SalientExtractAi](https://patreon.com/SalientExtractAi)
 
 ## How it works:
----
+
 This salient feature extractor is based on the yolov8-seg model, trained on synthetic data comprised of salient objects in a focused foreground superimposed over random blurred and in-focus background images. Therefore the model has a strong bias for in-focused objects, that are not your hands. 
 
 ## arguments 
