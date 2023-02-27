@@ -254,20 +254,14 @@ if __name__ == "__main__":
     "This is free software, and you are welcome to redistribute it\n",
     "under certain conditions.\n")
     
-    # # quick input check
-    # if len(sys.argv) < 5:
-    #     print("Missing arguments: \npython extract.py --model <model name> --input <path to video> --output <output name.mp4> --smooth <True / False> --stitch <True / False")
-    #     exit()
-
-    # # arguments
 
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', '-m', help="Model to use", type=str, required=True)
     parser.add_argument('--input', '-i', help="Path to input video", type=str, required=True)
     parser.add_argument('--output', '-o', help="Path to output video", type=str, required=True)
-    parser.add_argument('--smooth', '-s', help="Merges masks together (reduce jitter and outline precision)", type= bool, default= True)
-    parser.add_argument('--stitch', '-t', help="Stiches input frames, detection frame and extracted frames together", type= bool, default= False)
+    parser.add_argument('--smooth', '-s', help="Merges masks together (reduce jitter and outline precision)", action='store_true', default=False)
+    parser.add_argument('--stitch', '-t', help="Stiches input frames, detection frame and extracted frames together", action='store_true', default=False)
     args=parser.parse_args()
 
 
@@ -288,15 +282,21 @@ if __name__ == "__main__":
     length = int(vid_capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # defines how to stack the videos in debug mode
-    if width < length:
-        orientation = "vertical"
-        size = (int(width/3)+1, height)
+    if stitch:
+        if width < length:
+            orientation = "vertical"
+            size = (int(width/3)+1, height)
+        else:
+            orientation = "horizontal"
+            size = (width, int(height/3)+1)
     else:
-        orientation = "horizontal"
-        size = (width, int(height/3)+1)
+        size = (width, height)
+    
+    fourcc = None
 
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(output_name, fourcc, 60.0, size)
+
 
     # init tracking variables
     count = 0
@@ -304,6 +304,11 @@ if __name__ == "__main__":
     frames_with_masks = 0
 
     last_4_masks = []
+
+
+    print(stitch)
+    print(merge)
+
 
     # main video processing loop
     while(vid_capture.isOpened()):
