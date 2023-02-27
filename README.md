@@ -1,5 +1,5 @@
 
-# Salien Extract
+# Salient Extract
 
 Yolov8 based feature extraction model. 
 
@@ -45,11 +45,13 @@ Run:
     python extract.py --model free_models/salient_extract_n.pt --input yourVideo.mp4 --output output.mp4 --smooth --stitch
 
 
-## Support this project:
+## Access newer and larger models as well as the Dataset:
 
 
 **This project is currently self-funded; access the larger Yolo x model, dataset and newest models by supporting this project on Patreon**.
 Your support will also allow me to purchase better hardware and accelerate my work. 
+
+The full 120,000+ image dataset with annotations is also available through our Patreon
 
 [patreon.com/SalientExtractAi](https://patreon.com/SalientExtractAi)
 
