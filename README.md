@@ -97,6 +97,11 @@ If you use the `--stitch` flag, the script will stitch the input frame, predicti
 - mask inaccuracies when using smooth mode
 - struggles with objects that are not one uniform mass
 
+## generate semi-synthetic data:
+
+You can use the sister-project to salient extract [Composite Image Generator](https://github.com/andrewjouffray/Composite-Image-Generator), to generate images using the "copy paste" method.
+
+Note: this project needs a bit of work and a few updates.
 
 ## Special thanks
 
