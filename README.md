@@ -42,18 +42,27 @@ Install:
 
 Run:
 
-    python extract.py --model free_models/salient_extract_n.pt --input yourVideo.mp4 --output output.mp4 --smooth --stitch
+    python extract.py --model models/salient_extract_n.pt --input yourVideo.mp4 --output output.mp4 --smooth --stitch
 
+## Access the models (YoloV8)
 
-## Access newer and larger models as well as the Dataset:
+name | mAP@50 | location
+--- | --- | ---
+salient_n | 0.829 | models/salient_extract_n.pt
+salient_m | 0.723 | models/salient_extract_m.pt
+salient_x | 0.811 | [patreon.com/SalientExtractAi (Tier2)](https://patreon.com/SalientExtractAi)
+salient_x2 | 0.899 | [patreon.com/SalientExtractAi (Tier2)](https://patreon.com/SalientExtractAi)
 
+## Access the Datasets (YoloV8 format):
 
-**This project is currently self-funded; access the larger Yolo x model, dataset and newest models by supporting this project on Patreon**.
-Your support will also allow me to purchase better hardware and accelerate my work. 
+Some of them are __free__, so no need to subscribe to my Patreon to gain access.
 
-The full 120,000+ image dataset with annotations is also available through our Patreon
+name | # of images | location
+--- | --- | ---
+synthetic salient objects | 120,000 + | [patreon.com/SalientExtractAi (Tier3)](https://patreon.com/SalientExtractAi)
+validation | 204 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
+MSRA_10K (yolo) | 10,000 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
 
-[patreon.com/SalientExtractAi](https://patreon.com/SalientExtractAi)
 
 ## How it works:
 
@@ -63,7 +72,7 @@ This salient feature extractor is based on the yolov8-seg model, trained on synt
 
 **--model -m:**
 
-example: `--model free_models/salient_extract_n.pt`. This is the path to the model you want to use.
+example: `--model models/salient_extract_n.pt`. This is the path to the model you want to use.
 
 **--input -i:**
 
@@ -86,5 +95,9 @@ If you use the `--stitch` flag, the script will stitch the input frame, predicti
 - Need for in-focus foreground and out-of-focus background
 - jitteriness of the detection masks
 - mask inaccuracies when using smooth mode
+- struggles with objects that are not one uniform mass
 
 
+## Special thanks
+
+Although this specific project has been developed on my own free time using my own resources. I would like to thank Dr. Rakesh Kaundal and the [KAABiL Lab](http://bioinfo.usu.edu/) for providing hardware and assistance in the development of early models that eventually led me to start this project. 

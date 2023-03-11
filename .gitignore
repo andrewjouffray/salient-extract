@@ -2,6 +2,7 @@ runs/
 official_models/
 data/
 *salient_extract_x.pt
+*salient_extract_x_2.pt
 datasets/
 outputs/
 *.mp4
