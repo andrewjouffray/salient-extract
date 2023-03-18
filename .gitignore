@@ -3,7 +3,11 @@ official_models/
 data/
 *salient_extract_x.pt
 *salient_extract_x_2.pt
+*salient_extract_l.pt
+*salient_extract_m_2.pt
+*salient_extract_s.pt
 datasets/
+free_models/
 outputs/
 *.mp4
 *.zip

@@ -49,7 +49,10 @@ Run:
 name | mAP@50 | location
 --- | --- | ---
 salient_n | 0.829 | models/salient_extract_n.pt
+salient_s | 0.877 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
 salient_m | 0.723 | models/salient_extract_m.pt
+salient_m2 | 0.874 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
+salient_l | 0.888 | [patreon.com/SalientExtractAi (Tier2)](https://patreon.com/SalientExtractAi)
 salient_x | 0.811 | [patreon.com/SalientExtractAi (Tier2)](https://patreon.com/SalientExtractAi)
 salient_x2 | 0.899 | [patreon.com/SalientExtractAi (Tier2)](https://patreon.com/SalientExtractAi)
 
@@ -60,6 +63,7 @@ Some of them are __free__, so no need to subscribe to my Patreon to gain access.
 name | # of images | location
 --- | --- | ---
 synthetic salient objects | 120,000 + | [patreon.com/SalientExtractAi (Tier3)](https://patreon.com/SalientExtractAi)
+sample synthetic dataset | 355 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
 validation | 204 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
 MSRA_10K (yolo) | 10,000 | [patreon.com/SalientExtractAi (Free)](https://patreon.com/SalientExtractAi)
 
