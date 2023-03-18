@@ -282,13 +282,16 @@ if __name__ == "__main__":
     length = int(vid_capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # defines how to stack the videos in debug mode
+    print("width", width)
+    print("height", height)
     if stitch:
-        if width < length:
-            orientation = "vertical"
-            size = (int(width/3)+1, height)
-        else:
+        if width < height:
             orientation = "horizontal"
             size = (width, int(height/3)+1)
+
+        else:
+            orientation = "vertical"
+            size = (int(width/3)+1, height)
     else:
         size = (width, height)
     
